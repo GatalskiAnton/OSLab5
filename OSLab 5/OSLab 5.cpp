@@ -1,80 +1,61 @@
 #include <iostream>
 #include "bufferedChannel.h"
 
-template<typename T>
-class BufferedChannel
+
+void Worker1(BufferedChannel<std::string>& ch)
 {
-public:
-	explicit BufferedChannel(int buffSize) :buffSize_(buffSize),isClose(false) {};
-	void send(T&& data)
-	{
-		if (isClose)
-		{
-			throw new std::runtime_error("Channel is closed");
-		}
+	ch.send("213");
+	ch.send("231");
+	ch.send("2313");
+	ch.send("2313");
+	ch.send("12321");
+}
 
-		std::unique_lock<std::mutex> locker(mutex);
-
-		conditionalVariable.wait(locker, [this] {
-			return	channel_.size() < buffSize_;
-			});
-
-		channel_.push(std::move(data));
-		conditionalVariable.notify_one();
-	}
-
-	std::pair<T, bool> recv()
-	{
-		
-		if (isClose && channel_.empty())
-		{
-			return std::make_pair(T(), false);
-		}
-
-		std::unique_lock<std::mutex> locker(mutex);
-
-		conditionalVariable.wait(locker, [this] {
-			return	!channel_.empty();
-			});
-		T result = channel_.front();
-		channel_.pop();
-		conditionalVariable.notify_one();
-		return std::make_pair(result, true);
-	}
-
-	void close()
-	{
-		isClose = true;
-	}
-
-private:
-	std::mutex mutex;
-	int buffSize_;
-	std::queue<T> channel_;
-	std::condition_variable conditionalVariable;
-	bool isClose;
-};
-
-
+void Worker2(BufferedChannel<std::string>& ch)
+{
+	ch.recv();
+	ch.recv();
+	ch.recv();
+	ch.recv();
+}
 
 int main()
 {
-	BufferedChannel<std::string> channel(5);
-	channel.send("1");
-	channel.send("2");
-	channel.send("3");
-	channel.send("4");
-	channel.close();
-	std::pair<std::string, bool> p1 = channel.recv();
-	std::pair<std::string, bool> p2 = channel.recv();
-	std::pair<std::string, bool> p3 = channel.recv();
-	std::pair<std::string, bool> p4 = channel.recv();
-	std::pair<std::string, bool> p5 = channel.recv();
+	//BufferedChannel<std::string> channel(5);
+	//channel.send("1");
+	//channel.send("2");
+	//channel.send("3");
+	//channel.send("4");
+	//channel.close();
+	//std::pair<std::string, bool> p1 = channel.recv();
+	//std::pair<std::string, bool> p2 = channel.recv();
+	//std::pair<std::string, bool> p3 = channel.recv();
+	//std::pair<std::string, bool> p4 = channel.recv();
+	//std::pair<std::string, bool> p5 = channel.recv();
 
-	std::cout << p1.first << " " << p1.second << '\n';
-	std::cout << p2.first << " " << p2.second << '\n';
-	std::cout << p3.first << " " << p3.second << '\n';
-	std::cout << p4.first << " " << p4.second << '\n';
-	std::cout << p5.first << " " << p5.second << '\n';
+	//std::cout << p1.first << " " << p1.second << '\n';
+	//std::cout << p2.first << " " << p2.second << '\n';
+	//std::cout << p3.first << " " << p3.second << '\n';
+	//std::cout << p4.first << " " << p4.second << '\n';
+	//std::cout << p5.first << " " << p5.second << '\n';
+
+	BufferedChannel<std::string> ch(5);
+	std::vector<std::thread> threads;
+	for (int i = 0; i < 5; ++i)
+	{
+		if (i % 2 != 0)
+		{
+			threads.emplace_back(Worker1, std::ref(ch));
+		}
+		else
+		{
+			threads.emplace_back(Worker2, std::ref(ch));
+		}
+	}
+	for (auto& thread : threads)
+	{
+		thread.join();
+	}
+	return 0;
 }
 
