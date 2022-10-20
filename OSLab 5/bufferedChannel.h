@@ -17,12 +17,12 @@ public:
 
 		std::unique_lock<std::mutex> locker(mutex);
 
-		conditionalVariable.wait(locker, [this] {
+		cv.wait(locker, [this] {
 			return	channel_.size() < buffSize_;
 			});
 
 		channel_.push(std::move(data));
-		conditionalVariable.notify_one();
+		cv.notify_one();
 	}
 
 	std::pair<T, bool> recv()
@@ -35,25 +35,26 @@ public:
 
 		std::unique_lock<std::mutex> locker(mutex);
 
-		conditionalVariable.wait(locker, [this] {
+		cv.wait(locker, [this] {
 			return	!channel_.empty();
 			});
+
 		T result = channel_.front();
 		channel_.pop();
-		conditionalVariable.notify_one();
+		cv.notify_one();
 		return std::make_pair(result, true);
 	}
 
 	void close()
 	{
 		isClose.store(true);
-		conditionalVariable.notify_all();
+		cv.notify_all();
 	}
 
 private:
 	std::mutex mutex;
 	int buffSize_;
 	std::queue<T> channel_;
-	std::condition_variable conditionalVariable;
+	std::condition_variable cv;
 	std::atomic<bool> isClose;
 };

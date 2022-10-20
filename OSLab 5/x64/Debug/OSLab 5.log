@@ -1,2 +1,5 @@
-﻿  OSLab 5.cpp
-  OSLab 5.vcxproj -> C:\Users\ag629\source\repos\OSLab 5\x64\Debug\OSLab 5.exe
+﻿  bufferedChannel.cpp
+  OSLab 5.cpp
+C:\Users\ag629\source\repos\OSLab5\OSLab 5\OSLab 5.cpp(25,12): warning C4244: 'argument': conversion from 'time_t' to 'unsigned int', possible loss of data
+  Generating Code...
+  OSLab 5.vcxproj -> C:\Users\ag629\source\repos\OSLab5\x64\Debug\OSLab 5.exe
